@@ -2,6 +2,9 @@
   "name": "buddyscript",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "npm run prisma:generate && next build",
