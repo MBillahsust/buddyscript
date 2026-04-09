@@ -9,9 +9,8 @@ BuddyScript implements the required Login, Register, and Feed experience using N
 This repository is now organized into domain folders:
 
 1. frontend
-2. backend
-3. database
-4. other
+2. database
+3. other
 
 ## Tech Stack (Actual)
 
@@ -100,10 +99,8 @@ buddyscript/
 │  └─ prisma.config.ts
 ├─ database/
 │  └─ prisma/                     # schema + migrations
-├─ backend/                       # separate archived reference backend
 ├─ other/
 │  ├─ docs/
-│  ├─ archive/
 │  ├─ scripts/
 │  └─ static-html/
 └─ package.json                   # root scripts
@@ -279,7 +276,6 @@ Available from repository root:
 This repository is deployment-ready for:
 
 1. Frontend (Next.js app) on Vercel
-2. Backend (Express app in `backend/`) on Render
 
 ### Frontend on Vercel
 
@@ -300,32 +296,11 @@ Notes:
 1. Build step includes Prisma client generation automatically.
 2. The active app API is in `frontend/src/app/api`, so the frontend is self-contained on Vercel.
 
-### Backend on Render
-
-1. In Render, create a **Blueprint** from this repo (uses `render.yaml`), or create a Web Service manually with root directory `backend`.
-2. Build command: `npm install && npm run build`
-3. Start command: `npm run start`
-4. Health check path: `/health`
-5. Configure required environment variables:
-	1. `DATABASE_URL`
-	2. `REDIS_URL`
-	3. `JWT_SECRET`
-	4. `CLOUDINARY_CLOUD_NAME`
-	5. `CLOUDINARY_API_KEY`
-	6. `CLOUDINARY_API_SECRET`
-6. Configure recommended variables:
-	1. `CLIENT_URL` (your Vercel frontend URL)
-	2. `ALLOWED_ORIGINS` (comma-separated allowed origins, include your Vercel URL)
-	3. `REFRESH_TOKEN_SECRET`
-
 ### Environment Configuration Notes
 
-1. Vercel frontend and Render backend can share the same Cloudinary and Redis resources.
-2. If you use a managed database (Neon/Supabase/Railway/etc), use a production connection string for each service.
-3. Keep CORS strict in Render by setting `ALLOWED_ORIGINS` to known frontend domains only.
+1. If you use a managed database (Neon/Supabase/Railway/etc), use the production PostgreSQL connection string.
+2. Keep secrets server-side only (Vercel environment variables), never in client code.
 
 ## Notes
 
 1. Active backend for this implementation is in `frontend/src/app/api`.
-2. `backend/` is retained as archived/separate reference material.
-3. `other/archive/` retains legacy/reference artifacts for traceability.

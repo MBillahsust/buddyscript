@@ -7,7 +7,6 @@
     "start": "npm --prefix frontend run start",
     "lint": "npm --prefix frontend run lint",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "npm --prefix backend run dev",
     "prisma:generate": "npm --prefix frontend run prisma:generate",
     "prisma:migrate": "npm --prefix frontend exec prisma migrate deploy"
   }
