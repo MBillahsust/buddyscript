@@ -1,0 +1,563 @@
+{
+  "info": {
+    "name": "Buddy Script API",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-buddyscript-api",
+    "description": "Complete API collection for the Buddy Script social feed backend.\n\nCovers: Auth, Posts (feed, create, delete), Likes (post/comment/reply), Comments, Replies, and Cloudinary Upload signing.\n\n**Auth flow:**\nRun `Register` or `Login` — the access token is auto-saved to `{{token}}` and the user id to `{{userId}}`.\n\nRun `Create Post` — `{{postId}}` is auto-saved.\nRun `Add Comment` — `{{commentId}}` is auto-saved.\nRun `Add Reply` — `{{replyId}}` is auto-saved.\n\nAll protected endpoints pick up `{{token}}` via the collection-level Bearer auth automatically.\n\n**Base URL:** `http://localhost:8000/api/v1`\n\n**Response envelope:**\n- Success: `{ success: true, message?, data: { ... } }`\n- Error:   `{ success: false, error: { code, message, details? } }`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Register, login, logout, token refresh, and current user profile.\n\nLogin or Register first — the token is auto-saved to {{token}}.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.accessToken) {",
+                  "    pm.environment.set('token', res.data.accessToken);",
+                  "    pm.environment.set('userId', res.data.user.id);",
+                  "    console.log('Registered & token saved for: ' + res.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"Secret@123\"\n}"
+            },
+            "url": "{{BASE_URL}}/auth/register",
+            "description": "Create a new account. Returns access token in body and sets refresh token as an HttpOnly cookie.\n\nPassword rules: min 8 chars, at least one uppercase letter and one number.\n\nToken and userId are auto-saved to environment variables."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.accessToken) {",
+                  "    pm.environment.set('token', res.data.accessToken);",
+                  "    pm.environment.set('userId', res.data.user.id);",
+                  "    console.log('Token saved for: ' + res.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"Secret@123\"\n}"
+            },
+            "url": "{{BASE_URL}}/auth/login",
+            "description": "Authenticate with email and password.\n\nReturns access token (15 min) in body and sets the refresh token in an HttpOnly cookie (7 days).\n\nRate limited: 5 attempts per 15 minutes per IP."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.accessToken) {",
+                  "    pm.environment.set('token', res.data.accessToken);",
+                  "    console.log('Access token rotated and saved.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": "{{BASE_URL}}/auth/refresh-token",
+            "description": "Issue a new access token using the refresh token stored in the browser cookie.\n\nThe refresh token is rotated on each call (old token invalidated, new one set in cookie).\n\nNote: In Postman, the refresh cookie must be present in the cookie jar. Use a browser or set the cookie manually if testing standalone."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{BASE_URL}}/auth/logout",
+            "description": "Clear the refresh token cookie. The client should also discard the access token locally.\n\nStateless logout — the short-lived access token (15 min) will expire naturally."
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/auth/me",
+            "description": "Returns the profile of the currently authenticated user.\n\nRequires a valid Bearer token in the Authorization header."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "description": "Feed, create, and delete posts.\n\nAll endpoints require authentication.\n\nCreate a post first to populate {{postId}} for use in like/comment requests.",
+      "item": [
+        {
+          "name": "Get Feed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/posts?limit=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["posts"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "description": "ISO date string from previous page's nextCursor. Omit for first page.",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Posts per page. Max 50."
+                }
+              ]
+            },
+            "description": "Cursor-paginated feed. Returns PUBLIC posts from all users plus the current user's own PRIVATE posts, ordered newest first.\n\nResponse includes:\n- `posts[]` — each with userLiked, likesCount, commentsCount, author\n- `nextCursor` — pass as ?cursor= on the next request\n- `hasMore` — boolean"
+          }
+        },
+        {
+          "name": "Create Post (Text Only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.post) {",
+                  "    pm.environment.set('postId', res.data.post.id);",
+                  "    console.log('postId saved: ' + res.data.post.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is my first public post!\",\n  \"visibility\": \"PUBLIC\"\n}"
+            },
+            "url": "{{BASE_URL}}/posts",
+            "description": "Create a text-only post. The post ID is auto-saved to {{postId}}.\n\n`visibility` is optional, defaults to PUBLIC.\nFor posts with images, upload to Cloudinary first (use the Upload/Sign request), then include the returned `secure_url` as `imageUrl`."
+          }
+        },
+        {
+          "name": "Create Post (With Image)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.post) {",
+                  "    pm.environment.set('postId', res.data.post.id);",
+                  "    console.log('postId saved: ' + res.data.post.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Check out this photo!\",\n  \"imageUrl\": \"https://res.cloudinary.com/your-cloud/image/upload/v1234567890/buddy-script/sample.jpg\",\n  \"visibility\": \"PUBLIC\"\n}"
+            },
+            "url": "{{BASE_URL}}/posts",
+            "description": "Create a post with an image. Use the Upload > Get Signed Upload Params request first, upload directly to Cloudinary, then paste the returned secure_url here."
+          }
+        },
+        {
+          "name": "Create Private Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.post) {",
+                  "    pm.environment.set('postId', res.data.post.id);",
+                  "    console.log('postId saved: ' + res.data.post.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is visible only to me.\",\n  \"visibility\": \"PRIVATE\"\n}"
+            },
+            "url": "{{BASE_URL}}/posts",
+            "description": "Create a private post. Only the author can see this in the feed. Other users' feeds will not include it."
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{BASE_URL}}/posts/{{postId}}",
+            "description": "Delete the post identified by {{postId}}. Only the author can delete their own posts. Returns 403 if the authenticated user is not the author."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Likes",
+      "description": "Toggle likes and fetch who liked a post, comment, or reply.\n\nAll endpoints require authentication.\n\nThe toggle endpoint returns { liked: boolean, count: number } — the new state after the toggle.",
+      "item": [
+        {
+          "name": "Toggle Like — Post",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{BASE_URL}}/posts/{{postId}}/like",
+            "description": "Toggle like on a post. First call = like, second call = unlike.\n\nLikesCount on the post is updated atomically via $inc. Response: { liked: bool, count: number }."
+          }
+        },
+        {
+          "name": "Get Likers — Post",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/posts/{{postId}}/likes?limit=20",
+              "host": ["{{BASE_URL}}"],
+              "path": ["posts", "{{postId}}", "likes"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "description": "ISO date cursor from previous page.",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Paginated list of users who liked the post. Returns { likers[], nextCursor, hasMore }.\n\nEach liker: { id, firstName, lastName, avatarUrl }."
+          }
+        },
+        {
+          "name": "Toggle Like — Comment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{BASE_URL}}/comments/{{commentId}}/like",
+            "description": "Toggle like on a comment. Returns { liked: bool, count: number }."
+          }
+        },
+        {
+          "name": "Get Likers — Comment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/comments/{{commentId}}/likes?limit=20",
+              "host": ["{{BASE_URL}}"],
+              "path": ["comments", "{{commentId}}", "likes"],
+              "query": [
+                { "key": "cursor", "value": "", "disabled": true },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Paginated list of users who liked the comment."
+          }
+        },
+        {
+          "name": "Toggle Like — Reply",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{BASE_URL}}/replies/{{replyId}}/like",
+            "description": "Toggle like on a reply. Returns { liked: bool, count: number }."
+          }
+        },
+        {
+          "name": "Get Likers — Reply",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/replies/{{replyId}}/likes?limit=20",
+              "host": ["{{BASE_URL}}"],
+              "path": ["replies", "{{replyId}}", "likes"],
+              "query": [
+                { "key": "cursor", "value": "", "disabled": true },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Paginated list of users who liked the reply."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "description": "Add, list, and delete comments on posts.\n\nAll endpoints require authentication.\n\nRun `Add Comment` to populate {{commentId}} for reply and like requests.",
+      "item": [
+        {
+          "name": "Get Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/posts/{{postId}}/comments?limit=20",
+              "host": ["{{BASE_URL}}"],
+              "path": ["posts", "{{postId}}", "comments"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "description": "ISO date cursor from previous page.",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Paginated comments for a post, newest first. Each comment includes userLiked, likesCount, repliesCount, and author.\n\nResponse: { comments[], nextCursor, hasMore }."
+          }
+        },
+        {
+          "name": "Add Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.comment) {",
+                  "    pm.environment.set('commentId', res.data.comment.id);",
+                  "    console.log('commentId saved: ' + res.data.comment.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great post! Really enjoyed reading this.\"\n}"
+            },
+            "url": "{{BASE_URL}}/posts/{{postId}}/comments",
+            "description": "Add a comment to a post. Increments the post's commentsCount atomically.\n\nThe comment ID is auto-saved to {{commentId}}."
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{BASE_URL}}/comments/{{commentId}}",
+            "description": "Delete a comment. Author only.\n\nCascades: deletes all replies on this comment and all likes on those replies and the comment itself. Decrements commentsCount on the parent post."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Replies",
+      "description": "Add, list, and delete replies on comments.\n\nAll endpoints require authentication.\n\nRun `Add Reply` to populate {{replyId}} for like requests.",
+      "item": [
+        {
+          "name": "Get Replies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/comments/{{commentId}}/replies?limit=20",
+              "host": ["{{BASE_URL}}"],
+              "path": ["comments", "{{commentId}}", "replies"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "description": "ISO date cursor from previous page (oldest-first pagination).",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Paginated replies for a comment, oldest first (natural thread order). Each reply includes userLiked, likesCount, and author.\n\nResponse: { replies[], nextCursor, hasMore }."
+          }
+        },
+        {
+          "name": "Add Reply",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.reply) {",
+                  "    pm.environment.set('replyId', res.data.reply.id);",
+                  "    console.log('replyId saved: ' + res.data.reply.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thanks for the kind words!\"\n}"
+            },
+            "url": "{{BASE_URL}}/comments/{{commentId}}/replies",
+            "description": "Reply to a comment. Increments the comment's repliesCount atomically.\n\nThe reply ID is auto-saved to {{replyId}}."
+          }
+        },
+        {
+          "name": "Delete Reply",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{BASE_URL}}/replies/{{replyId}}",
+            "description": "Delete a reply. Author only. Deletes associated likes and decrements repliesCount on the parent comment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "description": "Cloudinary signed upload flow.\n\nStep 1 — Call `Get Signed Upload Params` to receive a server-signed signature.\nStep 2 — POST the file directly to Cloudinary using those params.\nStep 3 — Use the returned `secure_url` as `imageUrl` when creating a post.\n\nThe image never passes through the Express server.",
+      "item": [
+        {
+          "name": "Get Signed Upload Params",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data) {",
+                  "    pm.environment.set('cloudinary_signature', res.data.signature);",
+                  "    pm.environment.set('cloudinary_timestamp', res.data.timestamp);",
+                  "    pm.environment.set('cloudinary_api_key', res.data.apiKey);",
+                  "    pm.environment.set('cloudinary_cloud_name', res.data.cloudName);",
+                  "    pm.environment.set('cloudinary_folder', res.data.folder);",
+                  "    console.log('Cloudinary upload params saved. Timestamp: ' + res.data.timestamp);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{BASE_URL}}/upload/sign",
+            "description": "Generates a server-signed signature for a direct client-side upload to Cloudinary.\n\nReturns: { signature, timestamp, cloudName, apiKey, folder }\n\nAll values are auto-saved to environment variables for use in the next step."
+          }
+        },
+        {
+          "name": "Upload to Cloudinary (Direct)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Select the image file to upload."
+                },
+                { "key": "api_key",   "value": "{{cloudinary_api_key}}",   "type": "text" },
+                { "key": "timestamp", "value": "{{cloudinary_timestamp}}", "type": "text" },
+                { "key": "signature", "value": "{{cloudinary_signature}}", "type": "text" },
+                { "key": "folder",    "value": "{{cloudinary_folder}}",    "type": "text" }
+              ]
+            },
+            "url": "https://api.cloudinary.com/v1_1/{{cloudinary_cloud_name}}/image/upload",
+            "description": "Upload an image directly to Cloudinary using the signed params from the previous request.\n\nThis request goes to Cloudinary's servers — not to the Express backend.\n\nOn success, copy the `secure_url` from the response and use it as `imageUrl` when creating a post."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "description": "Server and dependency health check. No authentication required.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8000/health",
+            "description": "Returns server status, MongoDB connection state, Redis status, uptime, and environment.\n\nExpected healthy response: { status: 'healthy', database: 'connected', redis: 'ready' }"
+          }
+        }
+      ]
+    }
+  ]
+}
