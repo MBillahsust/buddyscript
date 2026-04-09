@@ -213,6 +213,7 @@ Primary routes implemented under frontend API handlers:
 5. `/api/replies/*`
 6. `/api/upload-signature`
 7. `/api/health/redis`
+9. `/api/health/db`
 
 ## Local Development Setup
 
