@@ -4,6 +4,7 @@ import type { NextAuthConfig } from "next-auth"
 // Used by middleware only
 export const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  trustHost: true,
   providers: [], // filled in auth.ts with credentials + bcrypt
   pages: {
     signIn: "/login",
