@@ -1,3 +1,2 @@
-import { handlers } from "@/lib/auth"
+export { GET, POST } from "../../../../../../backend/src/api/auth/[...nextauth]/route"
 
-export const { GET, POST } = handlers

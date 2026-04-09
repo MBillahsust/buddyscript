@@ -10,7 +10,8 @@ This repository is now organized into domain folders:
 
 1. frontend
 2. database
-3. other
+3. backend
+4. other
 
 ## Tech Stack (Actual)
 
@@ -86,7 +87,7 @@ Implemented:
 
 ```text
 buddyscript/
-├─ frontend/                      # Active Next.js app (UI + API routes)
+├─ frontend/                      # Active Next.js app (UI + thin API wrappers)
 │  ├─ src/
 │  │  ├─ app/                     # pages + route handlers
 │  │  ├─ components/              # UI components
@@ -97,6 +98,9 @@ buddyscript/
 │  ├─ public/
 │  ├─ package.json
 │  └─ prisma.config.ts
+├─ backend/
+│  └─ src/
+│     └─ api/                     # Real API implementation (auth/posts/comments/replies/etc.)
 ├─ database/
 │  └─ prisma/                     # schema + migrations
 ├─ other/
@@ -294,7 +298,8 @@ This repository is deployment-ready for:
 Notes:
 
 1. Build step includes Prisma client generation automatically.
-2. The active app API is in `frontend/src/app/api`, so the frontend is self-contained on Vercel.
+2. Real API logic is implemented in `backend/src/api`.
+3. `frontend/src/app/api` route files are thin wrappers that re-export backend handlers.
 
 ### Environment Configuration Notes
 
@@ -303,4 +308,5 @@ Notes:
 
 ## Notes
 
-1. Active backend for this implementation is in `frontend/src/app/api`.
+1. Backend implementation lives in `backend/src/api`.
+2. Frontend wrappers are in `frontend/src/app/api` for Next.js routing compatibility.
