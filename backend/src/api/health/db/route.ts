@@ -20,12 +20,19 @@ export async function GET() {
   try {
     // Simple no-op query to verify DB connectivity.
     await prisma.$queryRaw`SELECT 1`
+    const [users, posts, comments, replies] = await Promise.all([
+      prisma.user.count(),
+      prisma.post.count(),
+      prisma.comment.count(),
+      prisma.reply.count(),
+    ])
 
     return NextResponse.json({
       configured,
       connected: true,
       latencyMs: Date.now() - started,
       message: "PostgreSQL is reachable.",
+      counts: { users, posts, comments, replies },
     })
   } catch (error) {
     return NextResponse.json(
