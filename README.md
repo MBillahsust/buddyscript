@@ -1,21 +1,39 @@
 # BuddyScript
 
-Full-stack social feed application built for the Appifylab Full Stack Engineer assignment.
+BuddyScript is a full-stack social feed application built for the Appifylab Full Stack Engineer assignment.
 
-## Project Summary
+## Live Deployment
 
-BuddyScript implements the required Login, Register, and Feed experience using Next.js, with secure authentication, protected feed access, post creation with text and image, public/private visibility, likes, comments, replies, and liker lists.
+- Live App (Vercel): https://buddyscript-mbillahcsesust20-gmailcoms-projects.vercel.app
+- Deployment Platform: Vercel
+- Runtime: Next.js (App Router) on Node.js
 
-This repository is now organized into domain folders:
+## Assignment Deliverables
 
-1. frontend
-2. database
-3. backend
-4. other
+- GitHub Repository: https://github.com/MBillahsust/buddyscript
+- YouTube Walkthrough: TODO (add unlisted link)
+- Live URL: https://buddyscript-mbillahcsesust20-gmailcoms-projects.vercel.app
+- README Documentation: This file
 
-## Tech Stack (Actual)
+## Project Scope
 
-### Frontend + API Layer
+Implemented as required:
+
+1. Authentication (Register/Login)
+2. Protected feed page
+3. Post creation with text/image and visibility control
+4. Social interactions (likes, comments, replies)
+5. Security and scalability best-practice implementation
+
+Intentionally out of scope (not required by assignment):
+
+1. Forgot password
+2. OAuth social login
+3. Full notification system
+
+## Tech Stack
+
+### Frontend + API Runtime
 
 1. Next.js 16 (App Router)
 2. React 19
@@ -24,207 +42,104 @@ This repository is now organized into domain folders:
 5. TanStack React Query
 6. Zod validation
 
-### Data + Infra
+### Data + Infrastructure
 
 1. PostgreSQL
-2. Prisma ORM + Prisma migrations
-3. Redis (`ioredis`) for rate limiting and feed caching
-4. Cloudinary for image upload and delivery
+2. Prisma ORM + Migrations
+3. Redis (ioredis) for rate limiting and feed caching
+4. Cloudinary for media upload and delivery
 
-### Security Utilities
+### Security
 
-1. bcryptjs for password hashing
+1. bcryptjs password hashing
+2. Request validation and authz checks
+3. Security/performance audit logging
 
-## Assignment Requirement Coverage
+## Requirement-by-Requirement Coverage
 
-## 1) Authentication and Authorization
+### 1) Authentication and Authorization
 
 Implemented:
 
 1. Registration with first name, last name, email, password
-2. Secure login flow
-3. Password hashing using bcrypt
-4. Protected feed route
-5. Unauthorized request blocking at API level
+2. Login with credentials
+3. Password hashing with bcryptjs
+4. Protected route access to feed
+5. API-level unauthorized access blocking
 
-Out of scope by assignment and intentionally not implemented:
-
-1. Forgot password
-2. Additional auth features beyond requested scope
-
-## 2) Feed Page Requirements
+### 2) Feed Page Requirements
 
 Implemented:
 
 1. Feed accessible only after login
-2. Newest posts first ordering
-3. Create post with text and image
-4. Public and private post visibility rules
-5. Correct post like and unlike state
-6. Comments and replies
-7. Like and unlike for comments and replies
-8. Show who liked a post, comment, or reply
+2. Newest-first ordering
+3. Post creation (text and optional image)
+4. Public/private visibility support
+5. Post like/unlike
+6. Comment and reply create flows
+7. Comment/reply like/unlike
+8. Liker listing for posts, comments, and replies
 
-Visibility behavior:
+Visibility rules:
 
-1. Public posts are visible to all authenticated users
+1. Public posts are visible to authenticated users
 2. Private posts are visible only to the author
 
-## 3) Best Practices, Security, and Scale
+### 3) Best Practices, Security, and Scalability
 
 Implemented:
 
-1. Schema validation and input constraints
-2. Route and API authorization checks
-3. Redis-backed rate limiting with fallback behavior
-4. Structured security and performance logging
-5. Cursor-based feed pagination
-6. Redis feed caching and invalidation
-7. Composite database indexes for high-read feed patterns
-8. Optimistic UI updates for interaction responsiveness
+1. Zod input validation and schema constraints
+2. API auth/authz route guards
+3. Redis-backed rate limits (with safe fallback)
+4. Cursor-based pagination for feed endpoints
+5. Redis feed caching + invalidation strategy
+6. Composite DB indexing for read-heavy patterns
+7. Structured security and performance logs
+8. Optimistic UI updates for responsive UX
 
-## Refoldered Repository Structure
+## Architecture Overview
+
+The repository is organized into clear domain folders:
 
 ```text
 buddyscript/
-├─ frontend/                      # Active Next.js app (UI + thin API wrappers)
-│  ├─ src/
-│  │  ├─ app/                     # pages + route handlers
-│  │  ├─ components/              # UI components
-│  │  ├─ features/                # modularized domains (feed)
-│  │  ├─ hooks/                   # compatibility shims/shared hooks
-│  │  ├─ lib/                     # auth, prisma, redis, security, utils
-│  │  └─ types/
-│  ├─ public/
-│  ├─ package.json
-│  └─ prisma.config.ts
-├─ backend/
-│  └─ src/
-│     └─ api/                     # Real API implementation (auth/posts/comments/replies/etc.)
-├─ database/
-│  └─ prisma/                     # schema + migrations
-├─ other/
-│  ├─ docs/
-│  ├─ scripts/
-│  └─ static-html/
-└─ package.json                   # root scripts
+|- frontend/                 # Next.js app (UI + API route wrappers)
+|- backend/                  # Real API implementation logic
+|- database/                 # Prisma schema and migrations
+|- other/                    # docs/scripts/static references
+`- package.json              # root scripts
 ```
 
-## Key Features Implemented
+How request handling works:
 
-### Auth
+1. Next.js API routes live under `frontend/src/app/api`
+2. Those files are thin wrappers that re-export handlers
+3. Main handler implementation is in `backend/src/api`
 
-1. Register and login
-2. Protected navigation and route guarding
-3. Session-aware API access
+This keeps deployment simple on Vercel while preserving clean frontend/backend separation in code.
 
-### Feed
-
-1. Post composer with visibility toggle
-2. Infinite feed with cursor pagination
-3. Ownership-aware post menu actions
-
-### Social Interactions
-
-1. Like and unlike on posts
-2. Comment and reply creation
-3. Like and unlike on comments and replies
-4. Likers modal for posts, comments, and replies
-
-### UX
-
-1. Preserved provided design direction
-2. Responsive feed layout
-3. Avatar fallback initials logic
-
-## Implemented Security, Performance, and Scalability Features
-
-### Security Features Implemented
-
-1. Password hashing with bcrypt
-2. Protected route access and API-level authorization checks
-3. Strict request validation with Zod
-4. Redis-backed rate limiting on sensitive endpoints
-5. Security event logging with structured payloads
-6. Safe error responses (no internal stack traces exposed to users)
-7. Security headers configured in Next.js
-
-### Performance Features Implemented
-
-1. Redis feed caching with hit and miss handling
-2. Cache invalidation on write operations (create/delete)
-3. Optimistic UI updates for faster perceived interaction speed
-4. React Query stale/cache tuning to reduce unnecessary refetches
-5. Lazy loading and async decoding for feed images
-6. Dynamic import of heavier feed subcomponents
-7. Memoized feed card rendering
-8. Cloudinary image transformation for payload reduction
-9. API performance telemetry logging (timings, payload size, cache status)
-
-### Scalability Features Implemented
-
-1. Cursor-based feed pagination for stable high-volume reads
-2. Composite PostgreSQL indexes for visibility and recency query paths
-3. Like-recency indexing for faster liker lookups
-4. Redis-backed shared rate limiting strategy (multi-instance ready)
-5. Modularized feature architecture in frontend for long-term maintainability
-
-## Security Implementations
-
-1. Password hashing (bcrypt)
-2. Protected API routes and middleware checks
-3. Input validation via Zod
-4. Rate limit controls on sensitive routes
-5. Security event logging (`category: security`)
-6. Safe user-facing error handling
-7. Security headers from Next configuration
-
-## Performance and Scalability Implementations
-
-### API and Caching
-
-1. Redis feed cache with HIT and MISS response behavior
-2. Cache invalidation on post mutations
-3. Query tuning to reduce unnecessary refetching
-4. Performance telemetry (`category: performance`)
-
-### Database
-
-1. Cursor pagination for feed requests
-2. Composite indexes on visibility and recency paths
-3. Like recency index support
-
-### Frontend Rendering
-
-1. Optimistic updates for post interactions
-2. Image payload optimization via Cloudinary transforms
-3. Lazy image loading and async decoding
-4. Dynamic import of heavier feed subcomponents
-5. Memoized post rendering
-
-## API Overview
-
-Primary routes implemented under frontend API handlers:
+## API Surface (Core)
 
 1. `/api/auth/signup`
 2. `/api/auth/[...nextauth]`
-3. `/api/posts` and nested routes (`/like`, `/likes`, comments)
-4. `/api/comments/*`
-5. `/api/replies/*`
+3. `/api/posts`, `/api/posts/[id]`, `/api/posts/[id]/like`, `/api/posts/[id]/likes`, `/api/posts/[id]/comments`
+4. `/api/comments`, `/api/comments/[commentId]`, `/api/comments/[commentId]/like`, `/api/comments/[commentId]/likes`
+5. `/api/replies`, `/api/replies/[replyId]`, `/api/replies/[replyId]/like`, `/api/replies/[replyId]/likes`
 6. `/api/upload-signature`
-7. `/api/health/redis`
-9. `/api/health/db`
+7. `/api/health/db`
+8. `/api/health/redis`
 
-## Local Development Setup
+## Local Development
 
 ### Prerequisites
 
-1. Node.js 20+
-2. PostgreSQL instance
+1. Node.js 22.x (recommended)
+2. PostgreSQL database
 3. Redis instance
 4. Cloudinary account
 
-### 1) Install dependencies
+### Setup
 
 ```bash
 cd buddyscript
@@ -232,35 +147,73 @@ npm install
 npm --prefix frontend install
 ```
 
-### 2) Configure environment variables
+Create `frontend/.env.local` with:
 
-Set values in `frontend/.env.local` for:
+```env
+DATABASE_URL="postgresql://..."
+REDIS_URL="rediss://..."
 
-1. `DATABASE_URL` (PostgreSQL)
-2. `REDIS_URL`
-3. Cloudinary credentials
-4. NextAuth values (`AUTH_SECRET`, `NEXTAUTH_URL`)
+CLOUDINARY_CLOUD_NAME="..."
+CLOUDINARY_API_KEY="..."
+CLOUDINARY_API_SECRET="..."
 
-### 3) Prisma setup
+AUTH_SECRET="..."
+NEXTAUTH_SECRET="..."   # keep same value as AUTH_SECRET
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+Run Prisma and app:
 
 ```bash
 npm run prisma:generate
 npm run prisma:migrate
-```
-
-### 4) Run application
-
-```bash
 npm run dev
 ```
 
-Then open:
+Open http://localhost:3000
 
-1. `http://localhost:3000`
+## Production Deployment (Vercel)
 
-## Root Scripts
+This project is deployed on Vercel.
 
-Available from repository root:
+### Vercel Project Configuration
+
+1. Root Directory: `frontend`
+2. Build command: `npm run build`
+3. Install command: `npm install --include=dev`
+4. Node.js version: `22.x`
+
+### Required Environment Variables (Production)
+
+1. `DATABASE_URL`
+2. `REDIS_URL`
+3. `CLOUDINARY_CLOUD_NAME`
+4. `CLOUDINARY_API_KEY`
+5. `CLOUDINARY_API_SECRET`
+6. `AUTH_SECRET`
+7. `NEXTAUTH_SECRET` (same value as `AUTH_SECRET`)
+8. `NEXTAUTH_URL` (exact production base URL, no trailing slash)
+
+Recommended value:
+
+```env
+NEXTAUTH_URL="https://buddyscript-mbillahcsesust20-gmailcoms-projects.vercel.app"
+```
+
+## Verification Checklist (Evaluator Friendly)
+
+After deployment, verify:
+
+1. App opens: `/login`, `/register`, `/feed`
+2. Signup works and creates user
+3. Login works and session is established
+4. Create post (public/private) works
+5. Like/comment/reply flows work
+6. Health checks respond:
+   - `/api/health/db`
+   - `/api/health/redis`
+
+## NPM Scripts (Root)
 
 1. `npm run dev`
 2. `npm run build`
@@ -269,45 +222,8 @@ Available from repository root:
 5. `npm run prisma:generate`
 6. `npm run prisma:migrate`
 
-## Deliverables Checklist
-
-1. GitHub repository link
-2. YouTube walkthrough link (unlisted/private)
-3. Live URL (optional, recommended)
-4. README documentation
-
-## Deployment
-
-This repository is deployment-ready for:
-
-1. Frontend (Next.js app) on Vercel
-
-### Frontend on Vercel
-
-1. Import this GitHub repository in Vercel.
-2. Set **Root Directory** to `frontend`.
-3. Vercel will use `frontend/vercel.json` and run `npm run build`.
-4. Configure environment variables in Vercel Project Settings:
-	1. `DATABASE_URL`
-	2. `REDIS_URL`
-	3. `CLOUDINARY_CLOUD_NAME`
-	4. `CLOUDINARY_API_KEY`
-	5. `CLOUDINARY_API_SECRET`
-	6. `AUTH_SECRET`
-	7. `NEXTAUTH_URL` (set to your Vercel production URL)
-
-Notes:
-
-1. Build step includes Prisma client generation automatically.
-2. Real API logic is implemented in `backend/src/api`.
-3. `frontend/src/app/api` route files are thin wrappers that re-export backend handlers.
-
-### Environment Configuration Notes
-
-1. If you use a managed database (Neon/Supabase/Railway/etc), use the production PostgreSQL connection string.
-2. Keep secrets server-side only (Vercel environment variables), never in client code.
-
 ## Notes
 
-1. Backend implementation lives in `backend/src/api`.
-2. Frontend wrappers are in `frontend/src/app/api` for Next.js routing compatibility.
+1. Backend implementation source is under `backend/src/api`
+2. Frontend route wrappers are under `frontend/src/app/api`
+3. Project keeps assignment scope while applying practical production safeguards
